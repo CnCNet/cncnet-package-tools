@@ -84,8 +84,13 @@ export default class MIXFile {
         const array = Array.from(this.includedFilesID.values());
         array.sort((a, b) => ~~a.id - ~~b.id);
 
-        const buf = new ExBuffer(array.length * 12 + 10);
-        buf.offset = 10;
+        // Basic Classic layout:
+        //   uint16 entry count
+        //   uint32 data block size
+        //   count * { uint32 id, uint32 offset, uint32 size }
+        // Offsets are relative to the beginning of the data block.
+        const buf = new ExBuffer(array.length * 12 + 6);
+        buf.offset = 6;
 
         for (const item of array) {
             buf.write(item.id);
@@ -94,9 +99,8 @@ export default class MIXFile {
         }
 
         const result = buf.GetBuffer();
-        result.writeUInt32LE(0x00_00_00_00, 0);
-        result.writeUInt16LE(array.length, 4);
-        result.writeUInt32LE(this.body.offset, 6);
+        result.writeUInt16LE(array.length, 0);
+        result.writeUInt32LE(this.body.offset, 2);
 
         return result;
     }
