@@ -1,12 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import CRC32 from './CRC32';
 import ExBuffer from './ExBuffer';
 import ExFS from './ExFS';
+import { getNameIdAlgorithm, type NameFormat, type NameIdAlgorithm } from './NameFormat';
 
 export default class MIXFile {
     folderPath: string;
+    xccGameId: number;
+    nameIdAlgorithm: NameIdAlgorithm;
+    includeLmd: boolean;
     body: ExBuffer;
 
     includedFilesID: Map<
@@ -20,8 +23,11 @@ export default class MIXFile {
     >;
 
     // CreateFromFolder
-    constructor(folderPath: string) {
+    constructor(folderPath: string, xccGameId = 5, nameFormat: NameFormat = 'padded-crc32', includeLmd = true) {
         this.folderPath = folderPath;
+        this.xccGameId = xccGameId;
+        this.nameIdAlgorithm = getNameIdAlgorithm(nameFormat);
+        this.includeLmd = includeLmd;
         this.includedFilesID = new Map();
 
         const filesArray = ExFS.GetFileArray(this.folderPath);
@@ -36,7 +42,7 @@ export default class MIXFile {
 
     addFile(filePath: string) {
         const fileName = path.basename(filePath);
-        const id = MIXFile.getID(fileName);
+        const id = this.nameIdAlgorithm.getId(fileName);
 
         if (this.includedFilesID.has(id)) {
             console.log(`fileID =${id.toString(16)}, filePath =${filePath} Has in ${path}`);
@@ -69,11 +75,11 @@ export default class MIXFile {
 
         fileBuffer.writeInt32LE(size, 0x20);
 
-        fileBuffer.writeInt8(0x05, 0x2c);
+        fileBuffer.writeUInt8(this.xccGameId, 0x2c);
         fileBuffer.writeInt32LE(fileList.length, 0x30);
         fileBuffer.write(body, 0x34);
 
-        const id = MIXFile.getID(fileName);
+        const id = this.nameIdAlgorithm.getId(fileName);
         const offset = this.body.findOrCopy(fileBuffer);
         this.includedFilesID.set(id, { id, offset, size, fileName });
 
@@ -84,8 +90,13 @@ export default class MIXFile {
         const array = Array.from(this.includedFilesID.values());
         array.sort((a, b) => ~~a.id - ~~b.id);
 
-        const buf = new ExBuffer(array.length * 12 + 10);
-        buf.offset = 10;
+        // Basic Classic layout:
+        //   uint16 entry count
+        //   uint32 data block size
+        //   count * { uint32 id, uint32 offset, uint32 size }
+        // Offsets are relative to the beginning of the data block.
+        const buf = new ExBuffer(array.length * 12 + 6);
+        buf.offset = 6;
 
         for (const item of array) {
             buf.write(item.id);
@@ -94,9 +105,8 @@ export default class MIXFile {
         }
 
         const result = buf.GetBuffer();
-        result.writeUInt32LE(0x00_00_00_00, 0);
-        result.writeUInt16LE(array.length, 4);
-        result.writeUInt32LE(this.body.offset, 6);
+        result.writeUInt16LE(array.length, 0);
+        result.writeUInt32LE(this.body.offset, 2);
 
         return result;
     }
@@ -106,7 +116,9 @@ export default class MIXFile {
     }
 
     save(mixPath: string): this {
-        this.addLocalMixDatabase();
+        if (this.includeLmd) {
+            this.addLocalMixDatabase();
+        }
         const headerBuffer = this.getHeader();
         const bodyBuffer = this.getBody();
 
@@ -116,17 +128,4 @@ export default class MIXFile {
     }
 
     // ===== statics =====
-    static getID(fileName: string): number {
-        fileName = fileName.toUpperCase();
-
-        const a1 = fileName.length % 4;
-        if (a1) {
-            const a2 = fileName.length & ~3;
-            fileName += String.fromCharCode(a1);
-            let b = 3 - a1;
-            while (b--) fileName += fileName[a2];
-        }
-
-        return CRC32(fileName);
-    }
 }
