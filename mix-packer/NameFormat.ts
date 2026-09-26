@@ -53,7 +53,15 @@ class RolAlgorithm implements NameIdAlgorithm {
 
 class PaddedCrc32Algorithm implements NameIdAlgorithm {
     getId(name: string): number {
-        const upperName = name.toUpperCase();
+        let upperName = '';
+        for (let i = 0; i < name.length; i++) {
+            const value = name.charCodeAt(i);
+            if (value === 0 || value > 0x7f) {
+                throw new Error(`Invalid MIX member name: byte 0x${value.toString(16).padStart(2, '0').toUpperCase()} at index ${i}`);
+            }
+            upperName += String.fromCharCode(value >= 0x61 && value <= 0x7a ? value - 0x20 : value);
+        }
+
         const length = upperName.length;
         if (length % 4 !== 0) {
             const padding = length % 4;
