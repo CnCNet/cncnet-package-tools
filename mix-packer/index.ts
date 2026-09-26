@@ -24,6 +24,10 @@ function getOptions() {
                 type: 'string',
                 default: 'padded-crc32',
             },
+            'no-lmd': {
+                type: 'boolean',
+                default: false,
+            },
         },
     });
 
@@ -41,6 +45,7 @@ function getOptions() {
         outDir: path.resolve(values.outDir),
         xccGameId,
         nameFormat,
+        includeLmd: !values['no-lmd'],
     };
 }
 
@@ -65,7 +70,7 @@ function parseXccGameId(value: string | undefined) {
 }
 
 function main() {
-    const { inDir, outDir, xccGameId, nameFormat } = getOptions();
+    const { inDir, outDir, xccGameId, nameFormat, includeLmd } = getOptions();
 
     console.log(`Packing MIX files from '${inDir}' to '${outDir}'`);
 
@@ -85,7 +90,7 @@ function main() {
         const pack = path.join(parse.dir, parse.base);
 
         console.log(mix);
-        new MIXFile(pack, xccGameId, nameFormat).save(mix);
+        new MIXFile(pack, xccGameId, nameFormat, includeLmd).save(mix);
     }
 }
 

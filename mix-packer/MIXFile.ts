@@ -9,6 +9,7 @@ export default class MIXFile {
     folderPath: string;
     xccGameId: number;
     nameIdAlgorithm: NameIdAlgorithm;
+    includeLmd: boolean;
     body: ExBuffer;
 
     includedFilesID: Map<
@@ -22,10 +23,11 @@ export default class MIXFile {
     >;
 
     // CreateFromFolder
-    constructor(folderPath: string, xccGameId = 5, nameFormat: NameFormat = 'padded-crc32') {
+    constructor(folderPath: string, xccGameId = 5, nameFormat: NameFormat = 'padded-crc32', includeLmd = true) {
         this.folderPath = folderPath;
         this.xccGameId = xccGameId;
         this.nameIdAlgorithm = getNameIdAlgorithm(nameFormat);
+        this.includeLmd = includeLmd;
         this.includedFilesID = new Map();
 
         const filesArray = ExFS.GetFileArray(this.folderPath);
@@ -114,7 +116,9 @@ export default class MIXFile {
     }
 
     save(mixPath: string): this {
-        this.addLocalMixDatabase();
+        if (this.includeLmd) {
+            this.addLocalMixDatabase();
+        }
         const headerBuffer = this.getHeader();
         const bodyBuffer = this.getBody();
 

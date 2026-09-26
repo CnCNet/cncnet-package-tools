@@ -16,6 +16,7 @@ Command-line options:
 | `--outDir <path>`       | `-o`  | —              | Destination directory for generated MIX files that are not inside a `.pack` directory.                                               |
 | `--xccGameId <0-255>`   | —     | `5`            | Numeric XCC Game ID written to the embedded local database.                                                                          |
 | `--nameFormat <format>` | —     | `padded-crc32` | Filename-ID algorithm used for MIX directory entries.                                                                                |
+| `--no-lmd`              | —     | disabled       | Do not add `local mix database.dat` to generated MIX files.                                                                          |
 
 Both `--inDir` and `--outDir` are required. Paths are resolved relative to the
 current working directory.
