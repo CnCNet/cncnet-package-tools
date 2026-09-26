@@ -3,6 +3,7 @@ import * as path from 'path';
 
 import ExFS from './ExFS';
 import MIXFile from './MIXFile';
+import type { NameFormat } from './NameFormat';
 
 function getOptions() {
     const { values } = parseArgs({
@@ -19,6 +20,10 @@ function getOptions() {
                 type: 'string',
                 default: '5',
             },
+            nameFormat: {
+                type: 'string',
+                default: 'padded-crc32',
+            },
         },
     });
 
@@ -29,12 +34,23 @@ function getOptions() {
     }
 
     const xccGameId = parseXccGameId(values.xccGameId);
+    const nameFormat = parseNameFormat(values.nameFormat);
 
     return {
         inDir: path.resolve(values.inDir),
         outDir: path.resolve(values.outDir),
         xccGameId,
+        nameFormat,
     };
+}
+
+function parseNameFormat(value: string | undefined): NameFormat {
+    const format = value ?? 'padded-crc32';
+    if (format !== 'rol1' && format !== 'padded-crc32' && format !== 'rol3' && format !== 'ror6') {
+        console.error('Invalid --nameFormat. Use rol1, padded-crc32, rol3, or ror6.');
+        process.exit(1);
+    }
+    return format;
 }
 
 function parseXccGameId(value: string | undefined) {
@@ -49,7 +65,7 @@ function parseXccGameId(value: string | undefined) {
 }
 
 function main() {
-    const { inDir, outDir, xccGameId } = getOptions();
+    const { inDir, outDir, xccGameId, nameFormat } = getOptions();
 
     console.log(`Packing MIX files from '${inDir}' to '${outDir}'`);
 
@@ -69,7 +85,7 @@ function main() {
         const pack = path.join(parse.dir, parse.base);
 
         console.log(mix);
-        new MIXFile(pack, xccGameId).save(mix);
+        new MIXFile(pack, xccGameId, nameFormat).save(mix);
     }
 }
 

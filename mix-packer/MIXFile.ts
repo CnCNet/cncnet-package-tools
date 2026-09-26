@@ -1,13 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import CRC32 from './CRC32';
 import ExBuffer from './ExBuffer';
 import ExFS from './ExFS';
+import { getNameIdAlgorithm, type NameFormat, type NameIdAlgorithm } from './NameFormat';
 
 export default class MIXFile {
     folderPath: string;
     xccGameId: number;
+    nameIdAlgorithm: NameIdAlgorithm;
     body: ExBuffer;
 
     includedFilesID: Map<
@@ -21,9 +22,10 @@ export default class MIXFile {
     >;
 
     // CreateFromFolder
-    constructor(folderPath: string, xccGameId = 5) {
+    constructor(folderPath: string, xccGameId = 5, nameFormat: NameFormat = 'padded-crc32') {
         this.folderPath = folderPath;
         this.xccGameId = xccGameId;
+        this.nameIdAlgorithm = getNameIdAlgorithm(nameFormat);
         this.includedFilesID = new Map();
 
         const filesArray = ExFS.GetFileArray(this.folderPath);
@@ -38,7 +40,7 @@ export default class MIXFile {
 
     addFile(filePath: string) {
         const fileName = path.basename(filePath);
-        const id = MIXFile.getID(fileName);
+        const id = this.nameIdAlgorithm.getId(fileName);
 
         if (this.includedFilesID.has(id)) {
             console.log(`fileID =${id.toString(16)}, filePath =${filePath} Has in ${path}`);
@@ -75,7 +77,7 @@ export default class MIXFile {
         fileBuffer.writeInt32LE(fileList.length, 0x30);
         fileBuffer.write(body, 0x34);
 
-        const id = MIXFile.getID(fileName);
+        const id = this.nameIdAlgorithm.getId(fileName);
         const offset = this.body.findOrCopy(fileBuffer);
         this.includedFilesID.set(id, { id, offset, size, fileName });
 
@@ -122,17 +124,4 @@ export default class MIXFile {
     }
 
     // ===== statics =====
-    static getID(fileName: string): number {
-        fileName = fileName.toUpperCase();
-
-        const a1 = fileName.length % 4;
-        if (a1) {
-            const a2 = fileName.length & ~3;
-            fileName += String.fromCharCode(a1);
-            let b = 3 - a1;
-            while (b--) fileName += fileName[a2];
-        }
-
-        return CRC32(fileName);
-    }
 }
