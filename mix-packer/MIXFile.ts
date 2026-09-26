@@ -7,6 +7,7 @@ import ExFS from './ExFS';
 
 export default class MIXFile {
     folderPath: string;
+    xccGameId: number;
     body: ExBuffer;
 
     includedFilesID: Map<
@@ -20,8 +21,9 @@ export default class MIXFile {
     >;
 
     // CreateFromFolder
-    constructor(folderPath: string) {
+    constructor(folderPath: string, xccGameId = 5) {
         this.folderPath = folderPath;
+        this.xccGameId = xccGameId;
         this.includedFilesID = new Map();
 
         const filesArray = ExFS.GetFileArray(this.folderPath);
@@ -69,7 +71,7 @@ export default class MIXFile {
 
         fileBuffer.writeInt32LE(size, 0x20);
 
-        fileBuffer.writeInt8(0x05, 0x2c);
+        fileBuffer.writeUInt8(this.xccGameId, 0x2c);
         fileBuffer.writeInt32LE(fileList.length, 0x30);
         fileBuffer.write(body, 0x34);
 

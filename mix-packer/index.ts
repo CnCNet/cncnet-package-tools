@@ -15,6 +15,10 @@ function getOptions() {
                 type: 'string',
                 short: 'o',
             },
+            xccGameId: {
+                type: 'string',
+                default: '5',
+            },
         },
     });
 
@@ -24,14 +28,28 @@ function getOptions() {
         process.exit(1);
     }
 
+    const xccGameId = parseXccGameId(values.xccGameId);
+
     return {
         inDir: path.resolve(values.inDir),
         outDir: path.resolve(values.outDir),
+        xccGameId,
     };
 }
 
+function parseXccGameId(value: string | undefined) {
+    const code = Number(value ?? '5');
+
+    if (!Number.isInteger(code) || code < 0 || code > 0xff) {
+        console.error('Invalid --xccGameId. Use an integer byte value from 0 to 255.');
+        process.exit(1);
+    }
+
+    return code;
+}
+
 function main() {
-    const { inDir, outDir } = getOptions();
+    const { inDir, outDir, xccGameId } = getOptions();
 
     console.log(`Packing MIX files from '${inDir}' to '${outDir}'`);
 
@@ -51,7 +69,7 @@ function main() {
         const pack = path.join(parse.dir, parse.base);
 
         console.log(mix);
-        new MIXFile(pack).save(mix);
+        new MIXFile(pack, xccGameId).save(mix);
     }
 }
 
