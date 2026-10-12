@@ -31,6 +31,7 @@ export default class ExFS {
             ignore: [
                 //
                 toPosixPath(path.join(folderPath, '**', '*.md')),
+                toPosixPath(path.join(folderPath, '**', 'local mix database.dat')),
                 toPosixPath(path.join(folderPath, '*.pack', '**')),
             ],
         };
