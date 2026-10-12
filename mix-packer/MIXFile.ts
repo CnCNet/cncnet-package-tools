@@ -118,6 +118,11 @@ export default class MIXFile {
     save(mixPath: string): this {
         if (this.includeLmd) {
             this.addLocalMixDatabase();
+        } else if (this.includedFilesID.size === 0) {
+            const fileName = 'local mix database.dat';
+            const id = this.nameIdAlgorithm.getId(fileName);
+            const offset = this.body.findOrCopy(Buffer.alloc(0));
+            this.includedFilesID.set(id, { id, offset, size: 0, fileName });
         }
         const headerBuffer = this.getHeader();
         const bodyBuffer = this.getBody();

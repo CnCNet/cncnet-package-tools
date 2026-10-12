@@ -2,6 +2,10 @@
 
 Creates Basic Classic MIX files from `.pack` directories.
 
+With `--no-lmd`, an archive containing no files receives one zero-byte
+`local mix database.dat` entry. This keeps the classic header's entry count
+nonzero, since the game interprets a zero count as an extended-format marker.
+
 Usage:
 
 ```bash
