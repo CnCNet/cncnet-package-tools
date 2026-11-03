@@ -2,6 +2,9 @@
 
 Creates Basic Classic MIX files from `.pack` directories.
 
+Files whose names end with `.csf.ini` are CSF sources and are not packed. Generate the
+corresponding `.csf` files with the `csf-converter` tool before packing.
+
 With `--no-lmd`, an archive containing no files receives one zero-byte
 `local mix database.dat` entry. This keeps the classic header's entry count
 nonzero, since the game interprets a zero count as an extended-format marker.
